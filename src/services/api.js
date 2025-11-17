@@ -6,7 +6,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.DEV 
     ? "/api"  // Use Vite proxy in development
-    : "https://colleges-therapeutic-opening-backing.trycloudflare.com"  // Direct URL in production
+    : "http://localhost:5000/api"  // Direct URL in production
 );
 
 // ========================================
@@ -440,3 +440,5 @@ const api = {
 };
 
 export default api;
+
+console.log("API BASE URL = ", API_BASE_URL);

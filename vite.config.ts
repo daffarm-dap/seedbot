@@ -1,11 +1,18 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  // Get backend URL from env, default to localhost:5000 if not set
+  const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:5000';
+
+  return {
+    plugins: [react()],
+    resolve: {
+      extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     alias: {
       'vaul@1.1.2': 'vaul',
       'sonner@2.0.3': 'sonner',
@@ -60,11 +67,12 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: backendUrl,
         changeOrigin: true,
-        secure: false,
+        secure: backendUrl.startsWith('https'),  // Set secure based on protocol
         rewrite: (path) => path,  // Keep /api prefix
       }
     }
-  },
+  }
+  };
 });
