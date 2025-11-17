@@ -1328,7 +1328,15 @@ export function FarmerDashboard({
           coords = null;
         }
       }
+      
+      // Ensure coordinates is an array
+      if (!Array.isArray(coords)) {
+        coords = null;
+      }
+      
+      // Set coordinates - this will trigger LeafletMap to load them
       setEditingCoordinates(coords);
+      // Also set current coordinates for form validation
       setCurrentCoordinates(coords || []);
       
       // Clear new mapping form
@@ -1387,6 +1395,10 @@ export function FarmerDashboard({
     setCurrentCoordinates([]);
     setMappingName("");
     setSelectedMappingId(null);
+    // Force map to clear by passing null explicitly
+    setTimeout(() => {
+      setEditingCoordinates(null);
+    }, 0);
   };
 
   // Helper function to ensure polygon is closed

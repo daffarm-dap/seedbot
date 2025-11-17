@@ -83,6 +83,53 @@ function DrawingHandler({ onDrawComplete, isDrawing, drawingPoints, setDrawingPo
   );
 }
 
+// Component for dynamic tile layer that updates when mapType changes
+function DynamicTileLayer({ mapType }) {
+  const map = useMap();
+  const tileLayerRef = useRef(null);
+  
+  useEffect(() => {
+    // Remove previous tile layer if exists
+    if (tileLayerRef.current && map.hasLayer(tileLayerRef.current)) {
+      map.removeLayer(tileLayerRef.current);
+      tileLayerRef.current = null;
+    }
+    
+    // Add new tile layer based on mapType
+    const tileLayer = mapType === "normal" 
+      ? L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+          minZoom: 3,
+          noWrap: false,
+        })
+      : L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+          attribution: '&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.esri.com/">Esri</a>',
+          maxZoom: 19,
+          minZoom: 3,
+          noWrap: false,
+        });
+    
+    tileLayer.addTo(map);
+    tileLayerRef.current = tileLayer;
+    
+    // Invalidate size to ensure tiles load correctly
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+    
+    return () => {
+      // Cleanup on unmount or when mapType changes
+      if (tileLayerRef.current && map.hasLayer(tileLayerRef.current)) {
+        map.removeLayer(tileLayerRef.current);
+        tileLayerRef.current = null;
+      }
+    };
+  }, [map, mapType]);
+  
+  return null;
+}
+
 // Component to display saved mappings
 function SavedMappingsLayer({ mappings, onMappingClick, selectedMappingId }) {
   if (!mappings || mappings.length === 0) return null;
@@ -363,21 +410,41 @@ export function LeafletMap({
         // Parse coordinates if it's a string
         let coords = initialCoordinates;
         if (typeof initialCoordinates === 'string') {
-          coords = JSON.parse(initialCoordinates);
+          try {
+            coords = JSON.parse(initialCoordinates);
+          } catch (e) {
+            console.error("Error parsing initial coordinates string:", e);
+            coords = null;
+          }
         }
         
         // Ensure it's an array
-        if (Array.isArray(coords) && coords.length > 0) {
+        if (coords && Array.isArray(coords) && coords.length > 0) {
           let formattedCoords = [];
           
           // Check if it's array of [lat, lng] pairs
           if (Array.isArray(coords[0])) {
-            // Already in correct format
-            formattedCoords = coords;
+            // Already in correct format - validate and format each coordinate
+            formattedCoords = coords
+              .map((coord) => {
+                if (Array.isArray(coord) && coord.length >= 2) {
+                  const lat = parseFloat(coord[0]);
+                  const lng = parseFloat(coord[1]);
+                  if (!isNaN(lat) && !isNaN(lng)) {
+                    return [lat, lng];
+                  }
+                }
+                return null;
+              })
+              .filter((coord) => coord !== null);
           } else if (typeof coords[0] === 'number' && coords.length % 2 === 0) {
             // Flat array, convert to [lat, lng] pairs
             for (let i = 0; i < coords.length; i += 2) {
-              formattedCoords.push([parseFloat(coords[i]), parseFloat(coords[i + 1])]);
+              const lat = parseFloat(coords[i]);
+              const lng = parseFloat(coords[i + 1]);
+              if (!isNaN(lat) && !isNaN(lng)) {
+                formattedCoords.push([lat, lng]);
+              }
             }
           }
 
@@ -386,7 +453,7 @@ export function LeafletMap({
             if (onCoordinatesChange) {
               onCoordinatesChange(formattedCoords);
             }
-            setIsDrawing(true);
+            setIsDrawing(false); // Don't auto-enable drawing mode, let user choose
             setIsEditMode(true); // We're in edit mode
 
             // Calculate center and zoom from coordinates (only in edit mode)
@@ -397,6 +464,7 @@ export function LeafletMap({
             // Empty or invalid, clear
             setDrawingPoints([]);
             setIsDrawing(false);
+            setIsEditMode(false);
             setMapCenter(initialCenter);
             setMapZoom(initialZoom);
             if (onCoordinatesChange) {
@@ -407,6 +475,7 @@ export function LeafletMap({
           // Empty or invalid, clear
           setDrawingPoints([]);
           setIsDrawing(false);
+          setIsEditMode(false);
           setMapCenter(initialCenter);
           setMapZoom(initialZoom);
           if (onCoordinatesChange) {
@@ -417,6 +486,7 @@ export function LeafletMap({
         console.error("Error parsing initial coordinates:", error);
         setDrawingPoints([]);
         setIsDrawing(false);
+        setIsEditMode(false);
         setMapCenter(initialCenter);
         setMapZoom(initialZoom);
         if (onCoordinatesChange) {
@@ -592,23 +662,7 @@ export function LeafletMap({
           scrollWheelZoom={true}
           zoomControl={false}
         >
-          {mapType === "normal" ? (
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maxZoom={19}
-              minZoom={3}
-              noWrap={false}
-            />
-          ) : (
-            <TileLayer
-              attribution='&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.esri.com/">Esri</a>'
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maxZoom={19}
-              minZoom={3}
-              noWrap={false}
-            />
-          )}
+          <DynamicTileLayer mapType={mapType} />
           
           <MapInstance setMapInstance={setMap} />
           <ChangeView center={mapCenter} zoom={mapZoom} shouldUpdate={isEditMode} />
