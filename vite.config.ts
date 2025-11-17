@@ -6,8 +6,12 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '');
   
-  // Get backend URL from env, default to localhost:5000 if not set
-  const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:5000';
+  // Get backend URL from env - wajib diset di file .env
+  const backendUrl = env.VITE_BACKEND_URL;
+  
+  if (!backendUrl) {
+    throw new Error('VITE_BACKEND_URL harus diset di file .env');
+  }
 
   return {
     plugins: [react()],
