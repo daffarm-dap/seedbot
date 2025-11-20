@@ -3,9 +3,22 @@
 // ========================================
 
 // Use Vite proxy in development, or direct URL in production
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? "/api" : "");
+// Semua route sekarang tanpa /api prefix
+const API_BASE_URL = (() => {
+  const viteUrl = import.meta.env.VITE_API_URL;
+  
+  // If VITE_API_URL is set (production)
+  if (viteUrl) {
+    // Remove /api from end if present
+    if (viteUrl.endsWith('/api')) {
+      return viteUrl.slice(0, -4); // Remove '/api'
+    }
+    return viteUrl; // Use as is
+  }
+  
+  // Development mode - use root for Vite proxy
+  return ""; // Vite proxy will handle all routes
+})();
 
 
 // ========================================

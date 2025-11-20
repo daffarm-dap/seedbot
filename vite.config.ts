@@ -70,12 +70,44 @@ export default defineConfig(({ mode }) => {
     port: 5173,  // Use default Vite port
     open: true,
     proxy: {
-      '/api': {
+      // Proxy semua route tanpa /api prefix
+      '/auth': {
         target: backendUrl,
         changeOrigin: true,
-        secure: backendUrl.startsWith('https'),  // Set secure based on protocol
-        rewrite: (path) => path,  // Keep /api prefix
-      }
+        secure: backendUrl.startsWith('https'),
+        rewrite: (path) => path,
+      },
+      '/admin': {
+        target: backendUrl,
+        changeOrigin: true,
+        secure: backendUrl.startsWith('https'),
+        rewrite: (path) => path,
+      },
+      '/farmer': {
+        target: backendUrl,
+        changeOrigin: true,
+        secure: backendUrl.startsWith('https'),
+        rewrite: (path) => path,
+      },
+      '/news': {
+        target: backendUrl,
+        changeOrigin: true,
+        secure: backendUrl.startsWith('https'),
+        rewrite: (path) => path,
+      },
+      // Proxy untuk news images
+      '/news/images': {
+        target: backendUrl,
+        changeOrigin: true,
+        secure: backendUrl.startsWith('https'),
+        rewrite: (path) => path,
+      },
+      '/health': {
+        target: backendUrl,
+        changeOrigin: true,
+        secure: backendUrl.startsWith('https'),
+        rewrite: (path) => path,
+      },
     }
   }
   };
