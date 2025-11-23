@@ -1567,7 +1567,8 @@ export function FarmerDashboard({
             <img
               src={logoMedium}
               alt="Seedbot"
-              className="h-16 w-auto"
+              className="object-contain"
+              style={{ height: '64px', width: '128px', aspectRatio: '2/1' }}
             />
             <p className="text-xs text-slate-500 ml-1">
               Dashboard Petani
@@ -1590,8 +1591,8 @@ export function FarmerDashboard({
                     : "text-slate-700 hover:bg-emerald-50"
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-sm">{item.label}</span>
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm flex-1 text-left">{item.label}</span>
               </button>
             );
           })}
@@ -3152,13 +3153,14 @@ export function FarmerDashboard({
                         id="dummy-suhu"
                         type="number"
                         step="0.1"
-                        value={dummySensorData.suhu}
-                        onChange={(e) =>
+                        value={dummySensorData.suhu || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setDummySensorData({
                             ...dummySensorData,
-                            suhu: parseFloat(e.target.value) || 0,
-                          })
-                        }
+                            suhu: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                          });
+                        }}
                         placeholder="28.5"
                       />
                     </div>
@@ -3172,13 +3174,14 @@ export function FarmerDashboard({
                         id="dummy-kelembapan"
                         type="number"
                         step="0.1"
-                        value={dummySensorData.kelembapan}
-                        onChange={(e) =>
+                        value={dummySensorData.kelembapan || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setDummySensorData({
                             ...dummySensorData,
-                            kelembapan: parseFloat(e.target.value) || 0,
-                          })
-                        }
+                            kelembapan: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                          });
+                        }}
                         placeholder="65.3"
                       />
                     </div>
@@ -3192,13 +3195,14 @@ export function FarmerDashboard({
                         id="dummy-ph"
                         type="number"
                         step="0.1"
-                        value={dummySensorData.ph}
-                        onChange={(e) =>
+                        value={dummySensorData.ph || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setDummySensorData({
                             ...dummySensorData,
-                            ph: parseFloat(e.target.value) || 0,
-                          })
-                        }
+                            ph: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                          });
+                        }}
                         placeholder="6.8"
                       />
                     </div>
@@ -3212,13 +3216,14 @@ export function FarmerDashboard({
                         id="dummy-nitrogen"
                         type="number"
                         step="0.1"
-                        value={dummySensorData.nitrogen}
-                        onChange={(e) =>
+                        value={dummySensorData.nitrogen || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setDummySensorData({
                             ...dummySensorData,
-                            nitrogen: parseFloat(e.target.value) || 0,
-                          })
-                        }
+                            nitrogen: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                          });
+                        }}
                         placeholder="45.2"
                       />
                     </div>
@@ -3232,13 +3237,14 @@ export function FarmerDashboard({
                         id="dummy-phospor"
                         type="number"
                         step="0.1"
-                        value={dummySensorData.phospor}
-                        onChange={(e) =>
+                        value={dummySensorData.phospor || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setDummySensorData({
                             ...dummySensorData,
-                            phospor: parseFloat(e.target.value) || 0,
-                          })
-                        }
+                            phospor: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                          });
+                        }}
                         placeholder="38.7"
                       />
                     </div>
@@ -3252,13 +3258,14 @@ export function FarmerDashboard({
                         id="dummy-kalium"
                         type="number"
                         step="0.1"
-                        value={dummySensorData.kalium}
-                        onChange={(e) =>
+                        value={dummySensorData.kalium || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setDummySensorData({
                             ...dummySensorData,
-                            kalium: parseFloat(e.target.value) || 0,
-                          })
-                        }
+                            kalium: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                          });
+                        }}
                         placeholder="52.1"
                       />
                     </div>
@@ -3342,13 +3349,14 @@ export function FarmerDashboard({
                       <Input
                         id="dummy-benih-tertanam"
                         type="number"
-                        value={dummyRobotStatus.benihTertanam}
-                        onChange={(e) =>
+                        value={dummyRobotStatus.benihTertanam || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setDummyRobotStatus({
                             ...dummyRobotStatus,
-                            benihTertanam: parseInt(e.target.value) || 0,
-                          })
-                        }
+                            benihTertanam: value === "" ? 0 : (isNaN(parseInt(value)) ? 0 : parseInt(value)),
+                          });
+                        }}
                         placeholder="0"
                       />
                     </div>
@@ -3363,13 +3371,14 @@ export function FarmerDashboard({
                         type="number"
                         min="0"
                         max="100"
-                        value={dummyRobotStatus.baterai}
-                        onChange={(e) =>
+                        value={dummyRobotStatus.baterai || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setDummyRobotStatus({
                             ...dummyRobotStatus,
-                            baterai: parseInt(e.target.value) || 0,
-                          })
-                        }
+                            baterai: value === "" ? 0 : (isNaN(parseInt(value)) ? 0 : parseInt(value)),
+                          });
+                        }}
                         placeholder="100"
                       />
                     </div>

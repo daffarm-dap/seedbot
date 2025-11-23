@@ -642,7 +642,8 @@ export function AdminDashboard({ username, onLogout }) {
             <img 
               src={logoMedium} 
               alt="Seedbot" 
-              className="h-16 w-auto"
+              className="object-contain"
+              style={{ height: '64px', width: '128px', aspectRatio: '2/1' }}
             />
             <p className="text-xs text-slate-500 ml-1">Admin Panel</p>
           </div>
