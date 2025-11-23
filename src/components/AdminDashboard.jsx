@@ -968,7 +968,7 @@ export function AdminDashboard({ username, onLogout }) {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Aktif">Aktif</SelectItem>
-                            <SelectItem value="Tidak Aktif">Tidak Aktif</SelectItem>
+                            <SelectItem value="Nonaktif">Nonaktif</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
