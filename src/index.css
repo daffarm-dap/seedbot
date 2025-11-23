@@ -129,18 +129,18 @@
     --container-lg: 32rem;
     --container-2xl: 42rem;
     --container-3xl: 48rem;
-    --text-xs: .75rem;
-    --text-xs--line-height: calc(1 / .75);
-    --text-sm: .875rem;
-    --text-sm--line-height: calc(1.25 / .875);
-    --text-base: 1rem;
-    --text-base--line-height: calc(1.5 / 1);
-    --text-lg: 1.125rem;
-    --text-lg--line-height: calc(1.75 / 1.125);
-    --text-xl: 1.25rem;
-    --text-xl--line-height: calc(1.75 / 1.25);
-    --text-2xl: 1.5rem;
-    --text-2xl--line-height: calc(2 / 1.5);
+    --text-xs: .78975rem;
+    --text-xs--line-height: calc(1 / .78975);
+    --text-sm: .921375rem;
+    --text-sm--line-height: calc(1.25 / .921375);
+    --text-base: 1.053rem;
+    --text-base--line-height: calc(1.5 / 1.053);
+    --text-lg: 1.184625rem;
+    --text-lg--line-height: calc(1.75 / 1.184625);
+    --text-xl: 1.31625rem;
+    --text-xl--line-height: calc(1.75 / 1.31625);
+    --text-2xl: 1.5795rem;
+    --text-2xl--line-height: calc(2 / 1.5795);
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
@@ -3073,7 +3073,7 @@
 }
 
 :root {
-  --font-size: 16px;
+  --font-size: 16.848px;
   --background: #fff;
   --foreground: oklch(.145 0 0);
   --card: #fff;

@@ -569,7 +569,7 @@ export function AdminDashboard({ username, onLogout }) {
   const handleEditArticle = (article) => {
     setEditingArticle({
       ...article,
-      imagePreview: article.imageUrl
+      imagePreview: null // Don't set imagePreview, let ImageWithFallback handle the URL
     });
     setIsEditNewsDialogOpen(true);
   };
@@ -1151,56 +1151,122 @@ export function AdminDashboard({ username, onLogout }) {
                       <p className="text-gray-600">Belum ada berita</p>
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Judul</TableHead>
-                          <TableHead>Gambar</TableHead>
-                          <TableHead>Tanggal</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Aksi</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                    <>
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Judul</TableHead>
+                              <TableHead>Gambar</TableHead>
+                              <TableHead>Tanggal</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Aksi</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {newsArticles.map((article) => (
+                              <TableRow key={article.id}>
+                                <TableCell className="max-w-md">
+                                  <div>
+                                    <p className="font-medium">{article.title}</p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {truncateText(article.content, 100)}
+                                    </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {article.imageUrl ? (
+                                    <ImageWithFallback
+                                      src={article.imageUrl}
+                                      alt={article.title}
+                                      className="w-16 h-16 object-cover rounded"
+                                    />
+                                  ) : (
+                                    <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
+                                      <span className="text-xs text-gray-400">No Image</span>
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {article.date ? new Date(article.date).toLocaleDateString("id-ID") : "-"}
+                                </TableCell>
+                                <TableCell>
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                                      article.status === "Published"
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-yellow-100 text-yellow-700"
+                                    }`}
+                                  >
+                                    {article.status}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditArticle(article)}
+                                      className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteArticle(article.id)}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      {/* Mobile Card View */}
+                      <div className="md:hidden divide-y">
                         {newsArticles.map((article) => (
-                          <TableRow key={article.id}>
-                            <TableCell className="max-w-md">
-                              <div>
-                                <p className="font-medium">{article.title}</p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {truncateText(article.content, 100)}
-                                </p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
+                          <div key={article.id} className="p-4 space-y-3">
+                            <div className="flex items-start gap-3">
                               {article.imageUrl ? (
                                 <ImageWithFallback
                                   src={article.imageUrl}
                                   alt={article.title}
-                                  className="w-16 h-16 object-cover rounded"
+                                  className="w-20 h-20 object-cover rounded flex-shrink-0"
                                 />
                               ) : (
-                                <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
+                                <div className="w-20 h-20 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
                                   <span className="text-xs text-gray-400">No Image</span>
                                 </div>
                               )}
-                            </TableCell>
-                            <TableCell>
-                              {article.date ? new Date(article.date).toLocaleDateString("id-ID") : "-"}
-                            </TableCell>
-                            <TableCell>
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-                                  article.status === "Published"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-yellow-100 text-yellow-700"
-                                }`}
-                              >
-                                {article.status}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm">{article.title}</p>
+                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                  {truncateText(article.content, 80)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-2">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-xs text-gray-500">
+                                  {article.date ? new Date(article.date).toLocaleDateString("id-ID") : "-"}
+                                </span>
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs w-fit ${
+                                    article.status === "Published"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                  }`}
+                                >
+                                  {article.status}
+                                </span>
+                              </div>
+                              <div className="flex gap-2">
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -1218,11 +1284,11 @@ export function AdminDashboard({ username, onLogout }) {
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </div>
-                            </TableCell>
-                          </TableRow>
+                            </div>
+                          </div>
                         ))}
-                      </TableBody>
-                    </Table>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -1374,7 +1440,7 @@ export function AdminDashboard({ username, onLogout }) {
                 Ganti Password
               </h2>
 
-              <Card>
+              <Card className="w-full max-w-none" style={{ maxWidth: '2560px' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Lock className="w-5 h-5 text-emerald-600" />
@@ -1382,7 +1448,7 @@ export function AdminDashboard({ username, onLogout }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6 max-w-md">
+                  <div className="space-y-6 max-w-4xl">
                     {/* Password Lama */}
                     <div className="space-y-2">
                       <Label htmlFor="old-password">

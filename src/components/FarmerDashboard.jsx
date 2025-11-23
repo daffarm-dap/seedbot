@@ -2003,8 +2003,7 @@ export function FarmerDashboard({
                 </CardContent>
               </Card>
 
-              <div className="grid lg:grid-cols-2 gap-6">
-                {/* Left Section - Control Panel */}
+              <div className="max-w-7xl">
                 <div className="space-y-6">
                   {/* Edit Mapping Card */}
                   {editingMappingId ? (
@@ -3034,7 +3033,7 @@ export function FarmerDashboard({
                 Ganti Password
               </h2>
 
-              <Card>
+              <Card className="w-full max-w-none" style={{ maxWidth: '2560px' }}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Lock className="w-5 h-5 text-emerald-600" />
@@ -3042,7 +3041,7 @@ export function FarmerDashboard({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6 max-w-md">
+                  <div className="space-y-6 max-w-4xl">
                     {/* Password Lama */}
                     <div className="space-y-2">
                       <Label htmlFor="old-password">

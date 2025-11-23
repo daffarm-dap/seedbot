@@ -144,15 +144,6 @@ export function NewsPage({ onNavigateBack }) {
                     alt={article.title}
                     className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute top-4 left-4">
-                    <Badge className={
-                      index % 3 === 0 ? "bg-emerald-600 text-white" : 
-                      index % 3 === 1 ? "bg-teal-600 text-white" : 
-                      "bg-cyan-600 text-white"
-                    }>
-                      {index % 3 === 0 ? "Teknologi" : index % 3 === 1 ? "Studi Kasus" : "Update"}
-                    </Badge>
-                  </div>
                 </div>
                 <CardHeader>
                   <CardTitle className="text-slate-800 group-hover:text-emerald-600 transition-colors">
@@ -218,10 +209,38 @@ export function NewsPage({ onNavigateBack }) {
             <div>
               <h3 className="mb-4 text-slate-200">Ikuti Kami</h3>
               <div className="space-y-2 text-sm text-slate-400">
-                <p className="hover:text-emerald-400 cursor-pointer transition-colors">Instagram</p>
-                <p className="hover:text-emerald-400 cursor-pointer transition-colors">Facebook</p>
-                <p className="hover:text-emerald-400 cursor-pointer transition-colors">YouTube</p>
-                <p className="hover:text-emerald-400 cursor-pointer transition-colors">LinkedIn</p>
+                <a 
+                  href="https://www.instagram.com/ipbofficial/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-400 cursor-pointer transition-colors block"
+                >
+                  Instagram
+                </a>
+                <a 
+                  href="https://www.facebook.com/ipbuniversity" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-400 cursor-pointer transition-colors block"
+                >
+                  Facebook
+                </a>
+                <a 
+                  href="https://www.youtube.com/@IPB_TV" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-400 cursor-pointer transition-colors block"
+                >
+                  YouTube
+                </a>
+                <a 
+                  href="https://id.linkedin.com/school/ipbuniversityindonesia/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-400 cursor-pointer transition-colors block"
+                >
+                  LinkedIn
+                </a>
               </div>
             </div>
           </div>
