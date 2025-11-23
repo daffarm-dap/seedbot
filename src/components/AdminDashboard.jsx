@@ -59,6 +59,7 @@ import { toast } from "sonner";
 import logoMedium from "figma:asset/6931a194092f1fc319eb76cb6dbe2b371fb5d49e.png";
 import logoIcon from "figma:asset/88069b1892f4c1c70d51f47030a7591b1dea6dba.png";
 import api from "../services/api";
+import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 export function AdminDashboard({ username, onLogout }) {
   // Map menu ID to user-friendly hash
@@ -1052,11 +1053,19 @@ export function AdminDashboard({ username, onLogout }) {
                             </div>
                           ) : newArticle.imageUrl || newArticle.imagePreview ? (
                             <div className="relative">
-                              <img 
-                                src={newArticle.imagePreview || newArticle.imageUrl} 
-                                alt="Preview" 
-                                className="w-full h-48 object-cover rounded-lg"
-                              />
+                              {newArticle.imagePreview ? (
+                                <img 
+                                  src={newArticle.imagePreview} 
+                                  alt="Preview" 
+                                  className="w-full h-48 object-cover rounded-lg"
+                                />
+                              ) : (
+                                <ImageWithFallback
+                                  src={newArticle.imageUrl}
+                                  alt="Preview"
+                                  className="w-full h-48 object-cover rounded-lg"
+                                />
+                              )}
                               <Button
                                 type="button"
                                 size="icon"
@@ -1164,13 +1173,10 @@ export function AdminDashboard({ username, onLogout }) {
                             </TableCell>
                             <TableCell>
                               {article.imageUrl ? (
-                                <img 
-                                  src={article.imageUrl} 
+                                <ImageWithFallback
+                                  src={article.imageUrl}
                                   alt={article.title}
                                   className="w-16 h-16 object-cover rounded"
-                                  onError={(e) => {
-                                    e.target.src = "https://via.placeholder.com/64x64?text=No+Image";
-                                  }}
                                 />
                               ) : (
                                 <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
@@ -1249,11 +1255,19 @@ export function AdminDashboard({ username, onLogout }) {
                             </div>
                           ) : editingArticle.imageUrl || editingArticle.imagePreview ? (
                             <div className="relative">
-                              <img 
-                                src={editingArticle.imagePreview || editingArticle.imageUrl} 
-                                alt="Preview" 
-                                className="w-full h-48 object-cover rounded-lg"
-                              />
+                              {editingArticle.imagePreview ? (
+                                <img 
+                                  src={editingArticle.imagePreview} 
+                                  alt="Preview" 
+                                  className="w-full h-48 object-cover rounded-lg"
+                                />
+                              ) : (
+                                <ImageWithFallback
+                                  src={editingArticle.imageUrl}
+                                  alt="Preview"
+                                  className="w-full h-48 object-cover rounded-lg"
+                                />
+                              )}
                               <Button
                                 type="button"
                                 size="icon"
