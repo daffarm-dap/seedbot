@@ -92,7 +92,7 @@ export function FarmerDashboard({
     const hash = window.location.hash.replace('#', '');
     if (hash) {
       // Validate hash against menu items
-      const validMenus = ["dashboard", "mapping", "histori-robot", "parameter", "kendali-manual", "ganti-password", "dummy-data"];
+      const validMenus = ["dashboard", "mapping", "histori-robot", "parameter", "kendali-manual", "ganti-password", "dummy-data", "atur-threshold"];
       if (validMenus.includes(hash)) {
         return hash;
       }
@@ -178,6 +178,23 @@ export function FarmerDashboard({
   });
   const [updatingDummyData, setUpdatingDummyData] = useState(false);
 
+  // Sensor thresholds state
+  const [sensorThresholds, setSensorThresholds] = useState({
+    suhu_min: 20.0,
+    suhu_max: 35.0,
+    kelembapan_min: 40.0,
+    kelembapan_max: 80.0,
+    ph_min: 6.0,
+    ph_max: 7.5,
+    nitrogen_min: 30.0,
+    nitrogen_max: 60.0,
+    phospor_min: 25.0,
+    phospor_max: 50.0,
+    kalium_min: 40.0,
+    kalium_max: 70.0,
+  });
+  const [updatingThresholds, setUpdatingThresholds] = useState(false);
+
   // ML Prediction state
   const [mlPrediction, setMlPrediction] = useState({
     predictions: [
@@ -215,46 +232,76 @@ export function FarmerDashboard({
     },
   ];
 
-  // Function to determine sensor status based on value
-  const getSensorStatus = (type, value) => {
+  // Function to determine sensor status based on value and thresholds
+  const getSensorStatus = (type, value, thresholdsOverride = null) => {
+    const thresholds = thresholdsOverride || sensorThresholds;
+    
     switch (type) {
       case "suhu":
-        if (value >= 25 && value <= 32) return { status: "baik", label: "Optimal untuk jagung" };
-        if (value >= 20 && value < 25 || value > 32 && value <= 35) return { status: "sedang", label: "Suhu perlu perhatian" };
-        return { status: "jelek", label: "Suhu tidak optimal" };
+        const suhuMin = thresholds.suhu_min || 20.0;
+        const suhuMax = thresholds.suhu_max || 35.0;
+        if (value >= suhuMin && value <= suhuMax) {
+          return { status: "baik", label: "Suhu optimal" };
+        }
+        if (value < suhuMin) {
+          return { status: "jelek", label: "Suhu terlalu rendah" };
+        }
+        return { status: "jelek", label: "Suhu terlalu tinggi" };
       
       case "kelembapan":
-        if (value >= 60 && value <= 70) return { status: "baik", label: "Kelembapan optimal" };
-        if (value >= 50 && value < 60 || value > 70 && value <= 80) return { status: "sedang", label: "Perlu monitoring" };
-        if (value < 50) return { status: "sedang", label: "Perlu penyiraman" };
+        const kelembapanMin = thresholds.kelembapan_min || 40.0;
+        const kelembapanMax = thresholds.kelembapan_max || 80.0;
+        if (value >= kelembapanMin && value <= kelembapanMax) {
+          return { status: "baik", label: "Kelembapan optimal" };
+        }
+        if (value < kelembapanMin) {
+          return { status: "jelek", label: "Kelembapan terlalu rendah" };
+        }
         return { status: "jelek", label: "Kelembapan terlalu tinggi" };
       
       case "ph":
-        if (value >= 6.0 && value <= 7.0) return { status: "baik", label: "pH optimal untuk jagung" };
-        if (value >= 5.5 && value < 6.0 || value > 7.0 && value <= 7.5) return { status: "sedang", label: "pH perlu perhatian" };
-        if (value < 5.5) return { status: "jelek", label: "Terlalu asam" };
-        return { status: "jelek", label: "Terlalu basa" };
+        const phMin = thresholds.ph_min || 6.0;
+        const phMax = thresholds.ph_max || 7.5;
+        if (value >= phMin && value <= phMax) {
+          return { status: "baik", label: "pH optimal untuk jagung" };
+        }
+        if (value < phMin) {
+          return { status: "jelek", label: "pH terlalu rendah (terlalu asam)" };
+        }
+        return { status: "jelek", label: "pH terlalu tinggi (terlalu basa)" };
       
       case "nitrogen":
-        // Threshold untuk jagung: optimal 50-80 mg/kg
-        if (value >= 50 && value <= 80) return { status: "baik", label: "Kadar nitrogen baik untuk jagung" };
-        if (value >= 40 && value < 50 || value > 80 && value <= 100) return { status: "sedang", label: "Kadar nitrogen cukup" };
-        if (value < 40) return { status: "sedang", label: "Kadar nitrogen kurang" };
-        return { status: "jelek", label: "Kadar nitrogen berlebihan" };
+        const nitrogenMin = thresholds.nitrogen_min || 30.0;
+        const nitrogenMax = thresholds.nitrogen_max || 60.0;
+        if (value >= nitrogenMin && value <= nitrogenMax) {
+          return { status: "baik", label: "Kadar nitrogen baik untuk jagung" };
+        }
+        if (value < nitrogenMin) {
+          return { status: "jelek", label: "Kadar nitrogen terlalu rendah" };
+        }
+        return { status: "jelek", label: "Kadar nitrogen terlalu tinggi" };
       
       case "phospor":
-        // Threshold untuk jagung: optimal 20-60 mg/kg (diperluas untuk mengakomodasi data yang cocok untuk jagung)
-        if (value >= 20 && value <= 60) return { status: "baik", label: "Kadar phospor baik untuk jagung" };
-        if (value >= 15 && value < 20 || value > 60 && value <= 70) return { status: "sedang", label: "Kadar phospor cukup" };
-        if (value < 15) return { status: "sedang", label: "Kadar phospor kurang" };
-        return { status: "jelek", label: "Kadar phospor berlebihan" };
+        const phosporMin = thresholds.phospor_min || 25.0;
+        const phosporMax = thresholds.phospor_max || 50.0;
+        if (value >= phosporMin && value <= phosporMax) {
+          return { status: "baik", label: "Kadar phospor baik untuk jagung" };
+        }
+        if (value < phosporMin) {
+          return { status: "jelek", label: "Kadar phospor terlalu rendah" };
+        }
+        return { status: "jelek", label: "Kadar phospor terlalu tinggi" };
       
       case "kalium":
-        // Threshold untuk jagung: optimal 15-100 mg/kg (diperluas untuk mengakomodasi data yang cocok untuk jagung)
-        if (value >= 15 && value <= 100) return { status: "baik", label: "Kadar kalium baik untuk jagung" };
-        if (value >= 10 && value < 15 || value > 100 && value <= 120) return { status: "sedang", label: "Kadar kalium cukup" };
-        if (value < 10) return { status: "sedang", label: "Kadar kalium kurang" };
-        return { status: "jelek", label: "Kadar kalium berlebihan" };
+        const kaliumMin = thresholds.kalium_min || 40.0;
+        const kaliumMax = thresholds.kalium_max || 70.0;
+        if (value >= kaliumMin && value <= kaliumMax) {
+          return { status: "baik", label: "Kadar kalium baik untuk jagung" };
+        }
+        if (value < kaliumMin) {
+          return { status: "jelek", label: "Kadar kalium terlalu rendah" };
+        }
+        return { status: "jelek", label: "Kadar kalium terlalu tinggi" };
       
       default:
         return { status: "baik", label: "" };
@@ -266,6 +313,15 @@ export function FarmerDashboard({
     try {
       setLoadingRealtime(true);
       
+      // Load thresholds first if not already loaded
+      let thresholdsToUse = sensorThresholds;
+      if (!sensorThresholds.suhu_min) {
+        const loadedThresholds = await loadSensorThresholds();
+        if (loadedThresholds) {
+          thresholdsToUse = loadedThresholds;
+        }
+      }
+      
       // Load sensor data
       const sensorResponse = await api.farmer.getSensorData();
       const sensorDataRaw = sensorResponse.sensorData || {};
@@ -274,37 +330,37 @@ export function FarmerDashboard({
       const robotResponse = await api.farmer.getRobotStatus();
       const robotStatusRaw = robotResponse.robotStatus || {};
       
-      // Process sensor data
+      // Process sensor data using thresholds
       const processedSensorData = {
         suhu: {
           value: sensorDataRaw.suhu || 28,
           unit: "°C",
-          ...getSensorStatus("suhu", sensorDataRaw.suhu || 28),
+          ...getSensorStatus("suhu", sensorDataRaw.suhu || 28, thresholdsToUse),
         },
         kelembapan: {
           value: sensorDataRaw.kelembapan || 65,
           unit: "%",
-          ...getSensorStatus("kelembapan", sensorDataRaw.kelembapan || 65),
+          ...getSensorStatus("kelembapan", sensorDataRaw.kelembapan || 65, thresholdsToUse),
         },
         ph: {
           value: sensorDataRaw.ph || 6.5,
           unit: "",
-          ...getSensorStatus("ph", sensorDataRaw.ph || 6.5),
+          ...getSensorStatus("ph", sensorDataRaw.ph || 6.5, thresholdsToUse),
         },
         nitrogen: {
           value: sensorDataRaw.nitrogen || 50,
           unit: "mg/kg",
-          ...getSensorStatus("nitrogen", sensorDataRaw.nitrogen || 50),
+          ...getSensorStatus("nitrogen", sensorDataRaw.nitrogen || 50, thresholdsToUse),
         },
         phospor: {
           value: sensorDataRaw.phospor || 20,
           unit: "mg/kg",
-          ...getSensorStatus("phospor", sensorDataRaw.phospor || 20),
+          ...getSensorStatus("phospor", sensorDataRaw.phospor || 20, thresholdsToUse),
         },
         kalium: {
           value: sensorDataRaw.kalium || 60,
           unit: "mg/kg",
-          ...getSensorStatus("kalium", sensorDataRaw.kalium || 60),
+          ...getSensorStatus("kalium", sensorDataRaw.kalium || 60, thresholdsToUse),
         },
       };
       
@@ -502,7 +558,12 @@ export function FarmerDashboard({
   // Load realtime data on mount and when activeMenu is dashboard
   useEffect(() => {
     if (activeMenu === "dashboard") {
-      loadRealtimeData();
+      // Load thresholds first, then load realtime data
+      const loadData = async () => {
+        await loadSensorThresholds();
+        await loadRealtimeData();
+      };
+      loadData();
       
       // Auto-refresh every 5 seconds
       const interval = setInterval(() => {
@@ -714,7 +775,7 @@ export function FarmerDashboard({
     return chartDataResult;
   }, [robotHistory]);
 
-  // Function to get color based on status
+  // Function to get color based on status (hanya hijau dan merah)
   const getStatusColor = (status) => {
     switch (status) {
       case "baik":
@@ -722,12 +783,6 @@ export function FarmerDashboard({
           text: "text-emerald-600",
           bg: "bg-emerald-50",
           icon: "text-emerald-600",
-        };
-      case "sedang":
-        return {
-          text: "text-yellow-600",
-          bg: "bg-yellow-50",
-          icon: "text-yellow-600",
         };
       case "jelek":
         return {
@@ -737,9 +792,9 @@ export function FarmerDashboard({
         };
       default:
         return {
-          text: "text-gray-600",
-          bg: "bg-gray-50",
-          icon: "text-gray-600",
+          text: "text-emerald-600",
+          bg: "bg-emerald-50",
+          icon: "text-emerald-600",
         };
     }
   };
@@ -765,6 +820,11 @@ export function FarmerDashboard({
       id: "kendali-manual",
       label: "Kendali Robot",
       icon: Package,
+    },
+    {
+      id: "atur-threshold",
+      label: "Atur Threshold",
+      icon: Activity,
     },
     {
       id: "ganti-password",
@@ -963,7 +1023,7 @@ export function FarmerDashboard({
       const menuId = hash === "dashboard" || hash === "" ? "dashboard" : hash;
       
       // Validate hash against menu items
-      const validMenus = ["dashboard", "mapping", "histori-robot", "parameter", "kendali-manual", "ganti-password", "dummy-data"];
+      const validMenus = ["dashboard", "mapping", "histori-robot", "parameter", "kendali-manual", "ganti-password", "dummy-data", "atur-threshold"];
       if (validMenus.includes(menuId)) {
         setActiveMenu(menuId);
       }
@@ -1486,6 +1546,114 @@ export function FarmerDashboard({
       setChangingPassword(false);
     }
   };
+
+  // Load sensor thresholds
+  const loadSensorThresholds = async () => {
+    try {
+      const response = await api.farmer.getSensorThresholds();
+      if (response && response.thresholds) {
+        const newThresholds = {
+          suhu_min: response.thresholds.suhu_min ?? 20.0,
+          suhu_max: response.thresholds.suhu_max ?? 35.0,
+          kelembapan_min: response.thresholds.kelembapan_min ?? 40.0,
+          kelembapan_max: response.thresholds.kelembapan_max ?? 80.0,
+          ph_min: response.thresholds.ph_min ?? 6.0,
+          ph_max: response.thresholds.ph_max ?? 7.5,
+          nitrogen_min: response.thresholds.nitrogen_min ?? 30.0,
+          nitrogen_max: response.thresholds.nitrogen_max ?? 60.0,
+          phospor_min: response.thresholds.phospor_min ?? 25.0,
+          phospor_max: response.thresholds.phospor_max ?? 50.0,
+          kalium_min: response.thresholds.kalium_min ?? 40.0,
+          kalium_max: response.thresholds.kalium_max ?? 70.0,
+        };
+        setSensorThresholds(newThresholds);
+        return newThresholds;
+      }
+      // Return default values if response is invalid
+      const defaultThresholds = {
+        suhu_min: 20.0,
+        suhu_max: 35.0,
+        kelembapan_min: 40.0,
+        kelembapan_max: 80.0,
+        ph_min: 6.0,
+        ph_max: 7.5,
+        nitrogen_min: 30.0,
+        nitrogen_max: 60.0,
+        phospor_min: 25.0,
+        phospor_max: 50.0,
+        kalium_min: 40.0,
+        kalium_max: 70.0,
+      };
+      setSensorThresholds(defaultThresholds);
+      return defaultThresholds;
+    } catch (error) {
+      console.error("Gagal memuat threshold sensor:", error);
+      // Use default values if loading fails
+      const defaultThresholds = {
+        suhu_min: 20.0,
+        suhu_max: 35.0,
+        kelembapan_min: 40.0,
+        kelembapan_max: 80.0,
+        ph_min: 6.0,
+        ph_max: 7.5,
+        nitrogen_min: 30.0,
+        nitrogen_max: 60.0,
+        phospor_min: 25.0,
+        phospor_max: 50.0,
+        kalium_min: 40.0,
+        kalium_max: 70.0,
+      };
+      setSensorThresholds(defaultThresholds);
+      return defaultThresholds;
+    }
+  };
+
+  // Update sensor thresholds
+  const handleUpdateSensorThresholds = async () => {
+    try {
+      setUpdatingThresholds(true);
+      
+      // Debug: log data yang akan dikirim
+      console.log("Updating thresholds:", sensorThresholds);
+      
+      const response = await api.farmer.updateSensorThresholds(sensorThresholds);
+      
+      // Update state with response from server
+      if (response && response.thresholds) {
+        setSensorThresholds({
+          suhu_min: response.thresholds.suhu_min ?? 20.0,
+          suhu_max: response.thresholds.suhu_max ?? 35.0,
+          kelembapan_min: response.thresholds.kelembapan_min ?? 40.0,
+          kelembapan_max: response.thresholds.kelembapan_max ?? 80.0,
+          ph_min: response.thresholds.ph_min ?? 6.0,
+          ph_max: response.thresholds.ph_max ?? 7.5,
+          nitrogen_min: response.thresholds.nitrogen_min ?? 30.0,
+          nitrogen_max: response.thresholds.nitrogen_max ?? 60.0,
+          phospor_min: response.thresholds.phospor_min ?? 25.0,
+          phospor_max: response.thresholds.phospor_max ?? 50.0,
+          kalium_min: response.thresholds.kalium_min ?? 40.0,
+          kalium_max: response.thresholds.kalium_max ?? 70.0,
+        });
+      }
+      
+      // Reload realtime data to reflect threshold changes in status colors
+      await loadRealtimeData();
+      
+      toast.success("Threshold sensor berhasil diperbarui!");
+    } catch (error) {
+      console.error("Gagal memperbarui threshold sensor:", error);
+      toast.error("Gagal memperbarui threshold sensor: " + (error.message || "Terjadi kesalahan"));
+    } finally {
+      setUpdatingThresholds(false);
+    }
+  };
+
+  // Load thresholds when menu is opened
+  useEffect(() => {
+    if (activeMenu === "atur-threshold") {
+      loadSensorThresholds();
+    }
+  }, [activeMenu]);
 
   // Load dummy data when menu is opened
   useEffect(() => {
@@ -3124,6 +3292,284 @@ export function FarmerDashboard({
             </div>
           )}
 
+          {activeMenu === "atur-threshold" && (
+            <div className="space-y-6">
+              <h2 className="text-2xl text-gray-800">
+                Atur Threshold Sensor
+              </h2>
+
+              {/* Sensor Thresholds Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-emerald-600" />
+                    Threshold Sensor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Table for thresholds */}
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-semibold">Sensor</TableHead>
+                            <TableHead className="font-semibold">Min Threshold</TableHead>
+                            <TableHead className="font-semibold">Max Threshold</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {/* Suhu */}
+                          <TableRow>
+                            <TableCell className="font-medium">Suhu (°C)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.suhu_min || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    suhu_min: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="20.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.suhu_max || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    suhu_max: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="35.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Kelembapan */}
+                          <TableRow>
+                            <TableCell className="font-medium">Kelembapan (%)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.kelembapan_min || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    kelembapan_min: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="40.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.kelembapan_max || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    kelembapan_max: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="80.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* pH */}
+                          <TableRow>
+                            <TableCell className="font-medium">pH Tanah</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.ph_min || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    ph_min: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="6.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.ph_max || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    ph_max: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="7.5"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Nitrogen */}
+                          <TableRow>
+                            <TableCell className="font-medium">Nitrogen (mg/kg)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.nitrogen_min || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    nitrogen_min: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="30.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.nitrogen_max || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    nitrogen_max: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="60.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Phospor */}
+                          <TableRow>
+                            <TableCell className="font-medium">Phospor (mg/kg)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.phospor_min || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    phospor_min: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="25.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.phospor_max || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    phospor_max: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="50.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Kalium */}
+                          <TableRow>
+                            <TableCell className="font-medium">Kalium (mg/kg)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.kalium_min || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    kalium_min: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="40.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={sensorThresholds.kalium_max || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSensorThresholds({
+                                    ...sensorThresholds,
+                                    kalium_max: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="70.0"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="flex gap-4">
+                      <Button
+                        onClick={handleUpdateSensorThresholds}
+                        disabled={updatingThresholds}
+                        className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                      >
+                        {updatingThresholds ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Memperbarui...
+                          </>
+                        ) : (
+                          <>
+                            <Settings className="w-4 h-4 mr-2" />
+                            Perbarui Threshold
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {activeMenu === "dummy-data" && (
             <div className="space-y-6">
               <h2 className="text-2xl text-gray-800">
@@ -3143,149 +3589,165 @@ export function FarmerDashboard({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    {/* Suhu */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dummy-suhu">
-                        Suhu (°C)
-                      </Label>
-                      <Input
-                        id="dummy-suhu"
-                        type="number"
-                        step="0.1"
-                        value={dummySensorData.suhu || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDummySensorData({
-                            ...dummySensorData,
-                            suhu: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
-                          });
-                        }}
-                        placeholder="28.5"
-                      />
+                    {/* Table for sensor data */}
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="font-semibold">Sensor</TableHead>
+                            <TableHead className="font-semibold">Nilai Sekarang</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {/* Suhu */}
+                          <TableRow>
+                            <TableCell className="font-medium">Suhu (°C)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={dummySensorData.suhu || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDummySensorData({
+                                    ...dummySensorData,
+                                    suhu: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="28.5"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Kelembapan */}
+                          <TableRow>
+                            <TableCell className="font-medium">Kelembapan (%)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={dummySensorData.kelembapan || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDummySensorData({
+                                    ...dummySensorData,
+                                    kelembapan: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="65.3"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* pH */}
+                          <TableRow>
+                            <TableCell className="font-medium">pH Tanah</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={dummySensorData.ph || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDummySensorData({
+                                    ...dummySensorData,
+                                    ph: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="6.8"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Nitrogen */}
+                          <TableRow>
+                            <TableCell className="font-medium">Nitrogen (mg/kg)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={dummySensorData.nitrogen || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDummySensorData({
+                                    ...dummySensorData,
+                                    nitrogen: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="45.2"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Phospor */}
+                          <TableRow>
+                            <TableCell className="font-medium">Phospor (mg/kg)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={dummySensorData.phospor || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDummySensorData({
+                                    ...dummySensorData,
+                                    phospor: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="38.7"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Kalium */}
+                          <TableRow>
+                            <TableCell className="font-medium">Kalium (mg/kg)</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={dummySensorData.kalium || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDummySensorData({
+                                    ...dummySensorData,
+                                    kalium: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
+                                  });
+                                }}
+                                placeholder="52.1"
+                                className="w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
                     </div>
 
-                    {/* Kelembapan */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dummy-kelembapan">
-                        Kelembapan (%)
-                      </Label>
-                      <Input
-                        id="dummy-kelembapan"
-                        type="number"
-                        step="0.1"
-                        value={dummySensorData.kelembapan || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDummySensorData({
-                            ...dummySensorData,
-                            kelembapan: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
-                          });
-                        }}
-                        placeholder="65.3"
-                      />
+                    {/* Action Button */}
+                    <div className="flex gap-4">
+                      <Button
+                        onClick={handleUpdateDummySensorData}
+                        disabled={updatingDummyData}
+                        className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                      >
+                        {updatingDummyData ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Memperbarui...
+                          </>
+                        ) : (
+                          <>
+                            <Sliders className="w-4 h-4 mr-2" />
+                            Perbarui Data Sensor
+                          </>
+                        )}
+                      </Button>
                     </div>
-
-                    {/* pH */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dummy-ph">
-                        pH Tanah
-                      </Label>
-                      <Input
-                        id="dummy-ph"
-                        type="number"
-                        step="0.1"
-                        value={dummySensorData.ph || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDummySensorData({
-                            ...dummySensorData,
-                            ph: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
-                          });
-                        }}
-                        placeholder="6.8"
-                      />
-                    </div>
-
-                    {/* Nitrogen */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dummy-nitrogen">
-                        Nitrogen (mg/kg)
-                      </Label>
-                      <Input
-                        id="dummy-nitrogen"
-                        type="number"
-                        step="0.1"
-                        value={dummySensorData.nitrogen || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDummySensorData({
-                            ...dummySensorData,
-                            nitrogen: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
-                          });
-                        }}
-                        placeholder="45.2"
-                      />
-                    </div>
-
-                    {/* Phospor */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dummy-phospor">
-                        Phospor (mg/kg)
-                      </Label>
-                      <Input
-                        id="dummy-phospor"
-                        type="number"
-                        step="0.1"
-                        value={dummySensorData.phospor || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDummySensorData({
-                            ...dummySensorData,
-                            phospor: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
-                          });
-                        }}
-                        placeholder="38.7"
-                      />
-                    </div>
-
-                    {/* Kalium */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dummy-kalium">
-                        Kalium (mg/kg)
-                      </Label>
-                      <Input
-                        id="dummy-kalium"
-                        type="number"
-                        step="0.1"
-                        value={dummySensorData.kalium || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setDummySensorData({
-                            ...dummySensorData,
-                            kalium: value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value)),
-                          });
-                        }}
-                        placeholder="52.1"
-                      />
-                    </div>
-
-                    <Button
-                      onClick={handleUpdateDummySensorData}
-                      disabled={updatingDummyData}
-                      className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-                    >
-                      {updatingDummyData ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Memperbarui...
-                        </>
-                      ) : (
-                        <>
-                          <Sliders className="w-4 h-4 mr-2" />
-                          Perbarui Data Sensor
-                        </>
-                      )}
-                    </Button>
                   </div>
                 </CardContent>
               </Card>

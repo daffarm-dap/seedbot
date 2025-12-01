@@ -301,6 +301,22 @@ export const farmerAPI = {
     return handleResponse(res);
   },
 
+  getSensorThresholds: async () => {
+    const res = await fetch(`${API_BASE_URL}/farmer/sensor-thresholds`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  updateSensorThresholds: async (thresholds) => {
+    const res = await fetch(`${API_BASE_URL}/farmer/sensor-thresholds`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(thresholds),
+    });
+    return handleResponse(res);
+  },
+
   getRobotStatus: async () => {
     const res = await fetch(`${API_BASE_URL}/farmer/robot-status`, {
       headers: getAuthHeaders(),

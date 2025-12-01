@@ -126,7 +126,7 @@ export default function App() {
           }
           // If hash is admin/farmer menu hash, stay on current dashboard
           const adminMenuHashes = ['parameter-default', 'manajemen-user', 'kelola-petani', 'berita', 'ganti-password'];
-          const farmerMenuHashes = ['dashboard', 'mapping', 'histori-robot', 'parameter', 'kendali-manual', 'ganti-password', 'dummy-data'];
+          const farmerMenuHashes = ['dashboard', 'mapping', 'histori-robot', 'parameter', 'kendali-manual', 'ganti-password', 'dummy-data', 'atur-threshold'];
           
           if ((user.role === 'admin' && adminMenuHashes.includes(hash)) ||
               (user.role === 'petani' && farmerMenuHashes.includes(hash))) {
