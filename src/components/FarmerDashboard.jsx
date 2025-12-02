@@ -104,7 +104,7 @@ export function FarmerDashboard({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [seedingDepth, setSeedingDepth] = useState([5]);
   const [holeSpacing, setHoleSpacing] = useState([20]);
-  
+
   // Realtime data state
   const [sensorData, setSensorData] = useState({
     suhu: { value: 0, unit: "°C", status: "baik", label: "" },
@@ -148,13 +148,13 @@ export function FarmerDashboard({
   const [selectedMapping, setSelectedMapping] = useState("");
   const [robotHistory, setRobotHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  
+
   // Ref to store timeout ID for auto-return to Standby
   const standbyTimeoutRef = useRef(null);
-  
+
   // State untuk tracking proses Tancap Sensor
   const [isTancapSensor, setIsTancapSensor] = useState(false);
-  
+
   // Password change state
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -235,101 +235,102 @@ export function FarmerDashboard({
   // Function to determine sensor status based on value and thresholds
   const getSensorStatus = (type, value, thresholdsOverride = null) => {
     const thresholds = thresholdsOverride || sensorThresholds;
-    
+    const numValue = Number(value);
+
     switch (type) {
       case "suhu":
-        const suhuMin = thresholds.suhu_min || 20.0;
-        const suhuMax = thresholds.suhu_max || 35.0;
-        if (value >= suhuMin && value <= suhuMax) {
+        const suhuMin = Number(thresholds.suhu_min || 20.0);
+        const suhuMax = Number(thresholds.suhu_max || 35.0);
+        if (numValue >= suhuMin && numValue <= suhuMax) {
           return { status: "baik", label: "Suhu optimal" };
         }
-        if (value < suhuMin) {
+        if (numValue < suhuMin) {
           return { status: "jelek", label: "Suhu terlalu rendah" };
         }
         return { status: "jelek", label: "Suhu terlalu tinggi" };
-      
+
       case "kelembapan":
-        const kelembapanMin = thresholds.kelembapan_min || 40.0;
-        const kelembapanMax = thresholds.kelembapan_max || 80.0;
-        if (value >= kelembapanMin && value <= kelembapanMax) {
+        const kelembapanMin = Number(thresholds.kelembapan_min || 40.0);
+        const kelembapanMax = Number(thresholds.kelembapan_max || 80.0);
+        if (numValue >= kelembapanMin && numValue <= kelembapanMax) {
           return { status: "baik", label: "Kelembapan optimal" };
         }
-        if (value < kelembapanMin) {
+        if (numValue < kelembapanMin) {
           return { status: "jelek", label: "Kelembapan terlalu rendah" };
         }
         return { status: "jelek", label: "Kelembapan terlalu tinggi" };
-      
+
       case "ph":
-        const phMin = thresholds.ph_min || 6.0;
-        const phMax = thresholds.ph_max || 7.5;
-        if (value >= phMin && value <= phMax) {
+        const phMin = Number(thresholds.ph_min || 6.0);
+        const phMax = Number(thresholds.ph_max || 7.5);
+        if (numValue >= phMin && numValue <= phMax) {
           return { status: "baik", label: "pH optimal untuk jagung" };
         }
-        if (value < phMin) {
+        if (numValue < phMin) {
           return { status: "jelek", label: "pH terlalu rendah (terlalu asam)" };
         }
         return { status: "jelek", label: "pH terlalu tinggi (terlalu basa)" };
-      
+
       case "nitrogen":
-        const nitrogenMin = thresholds.nitrogen_min || 30.0;
-        const nitrogenMax = thresholds.nitrogen_max || 60.0;
-        if (value >= nitrogenMin && value <= nitrogenMax) {
+        const nitrogenMin = Number(thresholds.nitrogen_min || 30.0);
+        const nitrogenMax = Number(thresholds.nitrogen_max || 60.0);
+        if (numValue >= nitrogenMin && numValue <= nitrogenMax) {
           return { status: "baik", label: "Kadar nitrogen baik untuk jagung" };
         }
-        if (value < nitrogenMin) {
+        if (numValue < nitrogenMin) {
           return { status: "jelek", label: "Kadar nitrogen terlalu rendah" };
         }
         return { status: "jelek", label: "Kadar nitrogen terlalu tinggi" };
-      
+
       case "phospor":
-        const phosporMin = thresholds.phospor_min || 25.0;
-        const phosporMax = thresholds.phospor_max || 50.0;
-        if (value >= phosporMin && value <= phosporMax) {
+        const phosporMin = Number(thresholds.phospor_min || 25.0);
+        const phosporMax = Number(thresholds.phospor_max || 50.0);
+        if (numValue >= phosporMin && numValue <= phosporMax) {
           return { status: "baik", label: "Kadar phospor baik untuk jagung" };
         }
-        if (value < phosporMin) {
+        if (numValue < phosporMin) {
           return { status: "jelek", label: "Kadar phospor terlalu rendah" };
         }
         return { status: "jelek", label: "Kadar phospor terlalu tinggi" };
-      
+
       case "kalium":
-        const kaliumMin = thresholds.kalium_min || 40.0;
-        const kaliumMax = thresholds.kalium_max || 70.0;
-        if (value >= kaliumMin && value <= kaliumMax) {
+        const kaliumMin = Number(thresholds.kalium_min || 40.0);
+        const kaliumMax = Number(thresholds.kalium_max || 70.0);
+        if (numValue >= kaliumMin && numValue <= kaliumMax) {
           return { status: "baik", label: "Kadar kalium baik untuk jagung" };
         }
-        if (value < kaliumMin) {
+        if (numValue < kaliumMin) {
           return { status: "jelek", label: "Kadar kalium terlalu rendah" };
         }
         return { status: "jelek", label: "Kadar kalium terlalu tinggi" };
-      
+
       default:
         return { status: "baik", label: "" };
     }
   };
 
   // Load realtime data from backend
-  const loadRealtimeData = async () => {
+  const loadRealtimeData = async (thresholdsOverride = null) => {
     try {
       setLoadingRealtime(true);
-      
+
       // Load thresholds first if not already loaded
-      let thresholdsToUse = sensorThresholds;
-      if (!sensorThresholds.suhu_min) {
+      let thresholdsToUse = thresholdsOverride || sensorThresholds;
+      if (!thresholdsOverride && !sensorThresholds.suhu_min) {
         const loadedThresholds = await loadSensorThresholds();
         if (loadedThresholds) {
           thresholdsToUse = loadedThresholds;
         }
       }
-      
+
       // Load sensor data
       const sensorResponse = await api.farmer.getSensorData();
       const sensorDataRaw = sensorResponse.sensorData || {};
-      
+
       // Load robot status
       const robotResponse = await api.farmer.getRobotStatus();
       const robotStatusRaw = robotResponse.robotStatus || {};
-      
+
       // Process sensor data using thresholds
       const processedSensorData = {
         suhu: {
@@ -363,9 +364,9 @@ export function FarmerDashboard({
           ...getSensorStatus("kalium", sensorDataRaw.kalium || 60, thresholdsToUse),
         },
       };
-      
+
       setSensorData(processedSensorData);
-      
+
       // Process robot status
       setRobotStatus({
         connectionStatus: robotStatusRaw.connectionStatus || "terhubung",
@@ -373,14 +374,14 @@ export function FarmerDashboard({
         benihTertanam: robotStatusRaw.benihTertanam || 0,
         baterai: robotStatusRaw.baterai || 100,
       });
-      
+
       // Update last update time
       setLastUpdate(new Date());
-      
+
       // Calculate ML prediction based on sensor data
       // TODO: Replace with actual ML API call when ready
       calculateMLPrediction(processedSensorData);
-      
+
     } catch (error) {
       console.error("Gagal memuat data realtime:", error);
       // Don't show toast error for realtime data, just log it
@@ -403,10 +404,10 @@ export function FarmerDashboard({
         ph: sensorData.ph.value,
         rainfall: 100, // Default rainfall value (can be updated if available)
       };
-      
+
       // Call ML API
       const response = await api.farmer.predictCrop(mlInput);
-      
+
       // Update state with ML prediction results
       setMlPrediction({
         predictions: response.predictions || [],
@@ -415,15 +416,15 @@ export function FarmerDashboard({
         recommendedProbability: response.recommendedProbability || 0,
         maizeProbability: response.maizeProbability || 0,
       });
-      
+
       return; // Exit early if API call succeeds
     } catch (error) {
       console.error("Gagal memanggil ML API, menggunakan fallback:", error);
       // Fallback to mock prediction if API fails
     }
-    
+
     // Fallback: Mock prediction calculation (if API fails)
-    
+
     // All crops from dataset (without soybean)
     const allCrops = [
       "rice",
@@ -449,24 +450,24 @@ export function FarmerDashboard({
       "jute",
       "coffee"
     ];
-    
+
     // Calculate base probability for maize based on sensor conditions
     let maizeProb = 50; // Base probability
-    
+
     // Adjust based on sensor readings
     if (sensorData.suhu.value >= 25 && sensorData.suhu.value <= 32) maizeProb += 20;
     if (sensorData.kelembapan.value >= 60 && sensorData.kelembapan.value <= 70) maizeProb += 15;
     if (sensorData.ph.value >= 6.0 && sensorData.ph.value <= 7.0) maizeProb += 10;
     if (sensorData.nitrogen.value >= 50 && sensorData.nitrogen.value <= 60) maizeProb += 5;
-    
+
     // Ensure probability is within 0-100
     maizeProb = Math.min(100, Math.max(0, maizeProb));
-    
+
     // Generate probabilities for all crops
     // Distribute remaining probability (100 - maizeProb) among other crops
     const remainingProb = 100 - maizeProb;
     const otherCrops = allCrops.filter(crop => crop !== "maize");
-    
+
     // Define weights for different crop categories
     const cropWeights = {
       "rice": 0.3,
@@ -491,10 +492,10 @@ export function FarmerDashboard({
       "cotton": 0.02,
       "jute": 0.02,
     };
-    
+
     // Calculate total weight
     const totalWeight = otherCrops.reduce((sum, crop) => sum + (cropWeights[crop] || 0.01), 0);
-    
+
     // Create predictions array
     const predictions = allCrops.map(crop => {
       if (crop === "maize") {
@@ -503,15 +504,15 @@ export function FarmerDashboard({
         // Calculate probability based on weight
         const weight = cropWeights[crop] || 0.01;
         const prob = Math.round((remainingProb * weight) / totalWeight);
-        
+
         // Add some randomness (±10%)
         const randomFactor = 0.9 + Math.random() * 0.2; // 0.9 to 1.1
         const finalProb = Math.round(prob * randomFactor);
-        
+
         return { crop, probability: Math.max(0, Math.min(100, finalProb)) };
       }
     });
-    
+
     // Normalize probabilities to sum to 100
     let totalProb = predictions.reduce((sum, p) => sum + p.probability, 0);
     if (totalProb !== 100) {
@@ -537,15 +538,15 @@ export function FarmerDashboard({
         }
       }
     }
-    
+
     // Sort predictions by probability (descending)
     predictions.sort((a, b) => b.probability - a.probability);
-    
+
     // Check if maize has the highest probability
     const maizePrediction = predictions.find(p => p.crop === "maize");
     const highestPrediction = predictions[0];
     const isSuitable = highestPrediction.crop === "maize";
-    
+
     setMlPrediction({
       predictions,
       isSuitable,
@@ -560,16 +561,16 @@ export function FarmerDashboard({
     if (activeMenu === "dashboard") {
       // Load thresholds first, then load realtime data
       const loadData = async () => {
-        await loadSensorThresholds();
-        await loadRealtimeData();
+        const loadedThresholds = await loadSensorThresholds();
+        await loadRealtimeData(loadedThresholds);
       };
       loadData();
-      
+
       // Auto-refresh every 5 seconds
       const interval = setInterval(() => {
         loadRealtimeData();
       }, 5000);
-      
+
       return () => clearInterval(interval);
     }
   }, [activeMenu]);
@@ -580,7 +581,7 @@ export function FarmerDashboard({
       setLoadingMappings(true);
       const response = await api.farmer.getMappings();
       const mappings = response.mappings || [];
-      
+
       // Format mappings for display and map
       const formattedMappings = mappings.map(mapping => ({
         id: mapping.id,
@@ -590,7 +591,7 @@ export function FarmerDashboard({
         mappingName: mapping.mappingName || mapping.name || '',
         createdAt: mapping.createdAt || mapping.date || '',
       }));
-      
+
       setSavedMappings(formattedMappings);
     } catch (error) {
       console.error("Gagal memuat mappings:", error);
@@ -612,7 +613,7 @@ export function FarmerDashboard({
     try {
       const response = await api.farmer.getParameters();
       const parameters = response.parameters || {};
-      
+
       if (parameters.seedingDepth !== undefined) {
         setSeedingDepth([parameters.seedingDepth]);
       }
@@ -635,21 +636,21 @@ export function FarmerDashboard({
   // Format timestamp to readable format
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
-    
+
     try {
       const date = new Date(timestamp);
       if (isNaN(date.getTime())) {
         // If it's already in readable format, return as is
         return timestamp;
       }
-      
+
       // Format: YYYY-MM-DD HH:MM
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
-      
+
       return `${year}-${month}-${day} ${hours}:${minutes}`;
     } catch (error) {
       console.error("Error formatting timestamp:", error);
@@ -663,7 +664,7 @@ export function FarmerDashboard({
       setLoadingHistory(true);
       const response = await api.farmer.getRobotHistory();
       const history = response.history || [];
-      
+
       // Format history data - keep original timestamp for chart processing
       const formattedHistory = history.map((record, index) => ({
         id: index + 1,
@@ -681,7 +682,7 @@ export function FarmerDashboard({
         gpsLatitude: record.gpsLatitude,
         gpsLongitude: record.gpsLongitude,
       }));
-      
+
       setRobotHistory(formattedHistory);
     } catch (error) {
       console.error("Gagal memuat history robot:", error);
@@ -706,7 +707,7 @@ export function FarmerDashboard({
     // Helper function to parse timestamp
     const parseTimestamp = (timestamp) => {
       if (!timestamp) return null;
-      
+
       try {
         let recordDate;
         if (typeof timestamp === 'string') {
@@ -730,10 +731,10 @@ export function FarmerDashboard({
         } else {
           recordDate = new Date(timestamp);
         }
-        
+
         // Check if date is valid
         if (isNaN(recordDate.getTime())) return null;
-        
+
         return recordDate;
       } catch (error) {
         console.error("Error parsing timestamp:", timestamp, error);
@@ -745,13 +746,13 @@ export function FarmerDashboard({
     const chartDataResult = robotHistory
       .map(record => {
         if (!record.timestamp) return null;
-        
+
         const recordDate = parseTimestamp(record.timestamp);
         if (!recordDate) return null;
-        
+
         // Format date for display (DD/MM HH:MM)
         const formattedDate = `${String(recordDate.getDate()).padStart(2, '0')}/${String(recordDate.getMonth() + 1).padStart(2, '0')} ${String(recordDate.getHours()).padStart(2, '0')}:${String(recordDate.getMinutes()).padStart(2, '0')}`;
-        
+
         return {
           date: formattedDate,
           fullDate: recordDate.toISOString(),
@@ -771,7 +772,7 @@ export function FarmerDashboard({
     console.log("Robot history length:", robotHistory.length);
     console.log("Chart data result length:", chartDataResult.length);
     console.log("Chart data result (first 3):", chartDataResult.slice(0, 3));
-    
+
     return chartDataResult;
   }, [robotHistory]);
 
@@ -881,28 +882,28 @@ export function FarmerDashboard({
       ];
 
       const csvContent = csvRows.join('\n');
-      
+
       // Add BOM for UTF-8 to support Indonesian characters
       const BOM = '\uFEFF';
       const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-      
+
       // Create download link
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
-      
+
       // Generate filename with current date
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
       const filename = `histori_robot_${dateStr}.csv`;
-      
+
       link.setAttribute('href', url);
       link.setAttribute('download', filename);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-    toast.success("Histori robot berhasil diunduh!");
+
+      toast.success("Histori robot berhasil diunduh!");
     } catch (error) {
       console.error("Gagal mengunduh history:", error);
       toast.error("Gagal mengunduh history: " + (error.message || "Terjadi kesalahan"));
@@ -917,7 +918,7 @@ export function FarmerDashboard({
       };
 
       await api.farmer.updateParameters(parametersData);
-    toast.success("Parameter penaburan berhasil disimpan!");
+      toast.success("Parameter penaburan berhasil disimpan!");
     } catch (error) {
       console.error("Gagal menyimpan parameter:", error);
       toast.error("Gagal menyimpan parameter: " + (error.message || "Terjadi kesalahan"));
@@ -928,14 +929,14 @@ export function FarmerDashboard({
     try {
       const response = await api.farmer.getDefaultParameters();
       const defaultParams = response.parameters || {};
-      
+
       if (defaultParams.seedingDepth !== undefined) {
         setSeedingDepth([defaultParams.seedingDepth]);
       }
       if (defaultParams.holeSpacing !== undefined) {
         setHoleSpacing([defaultParams.holeSpacing]);
       }
-      
+
       toast.success("Parameter berhasil direset ke default!");
     } catch (error) {
       console.error("Gagal memuat parameter default:", error);
@@ -948,14 +949,14 @@ export function FarmerDashboard({
     try {
       const response = await api.farmer.getRobotStatus();
       const status = response.robotStatus || {};
-      
+
       setRobotStatus({
         connectionStatus: status.connectionStatus || 'terhubung',
         operationStatus: status.operationStatus || 'Standby',
         benihTertanam: status.benihTertanam || 0,
         baterai: status.baterai || 100,
       });
-      
+
       // Load selected mapping ID from backend
       if (status.selectedMappingId) {
         setSelectedMapping(String(status.selectedMappingId));
@@ -982,12 +983,12 @@ export function FarmerDashboard({
       loadMappings();
       // Then load robot status (which includes selected mapping)
       loadRobotStatus();
-      
+
       // Auto-refresh robot status every 2 seconds for real-time updates
       const interval = setInterval(() => {
         loadRobotStatus();
       }, 2000); // Refresh every 2 seconds
-      
+
       return () => {
         clearInterval(interval);
         // Don't clear timeout here - let it continue running
@@ -1021,7 +1022,7 @@ export function FarmerDashboard({
       const hash = window.location.hash.replace('#', '');
       // Convert "dashboard" to "dashboard" menu, empty hash to "dashboard"
       const menuId = hash === "dashboard" || hash === "" ? "dashboard" : hash;
-      
+
       // Validate hash against menu items
       const validMenus = ["dashboard", "mapping", "histori-robot", "parameter", "kendali-manual", "ganti-password", "dummy-data", "atur-threshold"];
       if (validMenus.includes(menuId)) {
@@ -1031,7 +1032,7 @@ export function FarmerDashboard({
 
     // Listen for hash changes
     window.addEventListener('hashchange', handleHashChange);
-    
+
     // Cleanup
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
@@ -1061,20 +1062,20 @@ export function FarmerDashboard({
     const handleKeyPress = (event) => {
       // Prevent default behavior for WASD keys
       const key = event.key.toLowerCase();
-      
+
       // Only handle if not typing in input/textarea/select
       const target = event.target;
-      const isInputElement = target.tagName === 'INPUT' || 
-                             target.tagName === 'TEXTAREA' || 
-                             target.tagName === 'SELECT' ||
-                             target.isContentEditable;
-      
+      const isInputElement = target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable;
+
       if (isInputElement) {
         return;
       }
 
       let action = null;
-      
+
       switch (key) {
         case 'w':
           action = 'Maju';
@@ -1129,7 +1130,7 @@ export function FarmerDashboard({
 
       // Send control command to backend
       const response = await api.farmer.robotControl(action);
-      
+
       // Update operation status
       if (response.operationStatus) {
         setRobotStatus(prev => ({
@@ -1137,7 +1138,7 @@ export function FarmerDashboard({
           operationStatus: response.operationStatus,
         }));
       }
-      
+
       toast.success(response.message || `Perintah ${action} berhasil dikirim ke robot!`);
 
       // Check if action is a directional movement (Maju, Mundur, Kanan, Kiri)
@@ -1151,7 +1152,7 @@ export function FarmerDashboard({
             await api.farmer.updateRobotStatus({
               operationStatus: 'Standby',
             });
-            
+
             // Update local state using functional update to get latest state
             setRobotStatus(prev => ({
               ...prev,
@@ -1160,12 +1161,12 @@ export function FarmerDashboard({
           } catch (error) {
             console.error("Gagal mengembalikan status ke Standby:", error);
           }
-          
+
           // Clear the ref
           standbyTimeoutRef.current = null;
         }, 3000); // 3 seconds
       }
-      
+
       // Check if action is "Return to Base" or "Stop"
       if (action === 'Return to Base' || action === 'Stop') {
         // Set timeout to return to Standby after 5 seconds
@@ -1176,7 +1177,7 @@ export function FarmerDashboard({
             await api.farmer.updateRobotStatus({
               operationStatus: 'Standby',
             });
-            
+
             // Update local state using functional update to get latest state
             setRobotStatus(prev => ({
               ...prev,
@@ -1185,17 +1186,17 @@ export function FarmerDashboard({
           } catch (error) {
             console.error("Gagal mengembalikan status ke Standby:", error);
           }
-          
+
           // Clear the ref
           standbyTimeoutRef.current = null;
         }, 5000); // 5 seconds
       }
-      
+
       // Check if action is "Tancap Sensor"
       if (action === 'Tancap Sensor') {
         // Set state to indicate tancap sensor is in progress
         setIsTancapSensor(true);
-        
+
         // Save current sensor data to history
         try {
           const historyData = {
@@ -1212,20 +1213,20 @@ export function FarmerDashboard({
             gpsLatitude: null,
             gpsLongitude: null,
           };
-          
+
           await api.farmer.createRobotHistory(historyData);
-          
+
           // Reload history if user is on history menu
           if (activeMenu === 'histori-robot') {
             await loadRobotHistory();
           }
-          
+
           toast.success("Data sensor berhasil disimpan ke history!");
         } catch (error) {
           console.error("Gagal menyimpan data sensor ke history:", error);
           toast.error("Gagal menyimpan data sensor ke history");
         }
-        
+
         // Set timeout to return to Standby after 5 seconds
         // Store timeout ID in ref so it persists even if user switches menus
         standbyTimeoutRef.current = setTimeout(async () => {
@@ -1234,25 +1235,25 @@ export function FarmerDashboard({
             await api.farmer.updateRobotStatus({
               operationStatus: 'Standby',
             });
-            
+
             // Update local state using functional update to get latest state
             setRobotStatus(prev => ({
               ...prev,
               operationStatus: 'Standby',
             }));
-            
+
             // Clear tancap sensor state
             setIsTancapSensor(false);
           } catch (error) {
             console.error("Gagal mengembalikan status ke Standby:", error);
             setIsTancapSensor(false);
           }
-          
+
           // Clear the ref
           standbyTimeoutRef.current = null;
         }, 5000); // 5 seconds
       }
-      
+
       // If action is "Stop", also clear tancap sensor state
       if (action === 'Stop') {
         setIsTancapSensor(false);
@@ -1271,20 +1272,20 @@ export function FarmerDashboard({
   const handleModeChange = async (newMode) => {
     try {
       setRobotMode(newMode);
-      
+
       // Update operation status based on mode
       const operationStatus = newMode === "otomatis" ? "Mode Otomatis" : "Mode Manual";
-      
+
       await api.farmer.updateRobotStatus({
         operationStatus: operationStatus,
       });
-      
+
       // Update local state
       setRobotStatus(prev => ({
         ...prev,
         operationStatus: operationStatus,
       }));
-      
+
       toast.success(`Mode diubah ke ${newMode === "otomatis" ? "Otomatis" : "Manual"}`);
     } catch (error) {
       console.error("Gagal mengubah mode:", error);
@@ -1312,10 +1313,10 @@ export function FarmerDashboard({
       };
 
       const response = await api.farmer.createMapping(mappingData);
-      
+
       // Reload mappings from backend
       await loadMappings();
-      
+
       setMappingName("");
       setCurrentCoordinates([]);
       toast.success("Mapping berhasil disimpan!");
@@ -1341,7 +1342,7 @@ export function FarmerDashboard({
   const handleDeleteMapping = (id) => {
     const mapping = savedMappings.find((m) => m.id === id);
     if (!mapping) return;
-    
+
     setMappingToDelete({ id, name: mapping.name });
     setIsDeleteMappingDialogOpen(true);
   };
@@ -1351,10 +1352,10 @@ export function FarmerDashboard({
 
     try {
       await api.farmer.deleteMapping(mappingToDelete.id);
-      
+
       // Reload mappings from backend
       await loadMappings();
-      
+
       setIsDeleteMappingDialogOpen(false);
       setMappingToDelete(null);
       toast.success("Mapping berhasil dihapus!");
@@ -1368,7 +1369,7 @@ export function FarmerDashboard({
     try {
       const response = await api.farmer.getMapping(id);
       const mapping = response.mapping;
-      
+
       if (!mapping) {
         toast.error("Mapping tidak ditemukan!");
         return;
@@ -1377,7 +1378,7 @@ export function FarmerDashboard({
       // Set editing state
       setEditingMappingId(mapping.id);
       setEditingMappingName(mapping.mappingName || mapping.name || "");
-      
+
       // Parse and set coordinates
       let coords = mapping.coordinates;
       if (typeof coords === 'string') {
@@ -1388,21 +1389,21 @@ export function FarmerDashboard({
           coords = null;
         }
       }
-      
+
       // Ensure coordinates is an array
       if (!Array.isArray(coords)) {
         coords = null;
       }
-      
+
       // Set coordinates - this will trigger LeafletMap to load them
       setEditingCoordinates(coords);
       // Also set current coordinates for form validation
       setCurrentCoordinates(coords || []);
-      
+
       // Clear new mapping form
       setMappingName("");
       setSelectedMappingId(null);
-      
+
       toast.success("Mapping dimuat untuk diedit!");
     } catch (error) {
       console.error("Gagal memuat mapping:", error);
@@ -1430,17 +1431,17 @@ export function FarmerDashboard({
       };
 
       await api.farmer.updateMapping(editingMappingId, mappingData);
-      
+
       // Reload mappings from backend
       await loadMappings();
-      
+
       // Clear editing state
       setEditingMappingId(null);
       setEditingMappingName("");
       setEditingCoordinates(null);
       setCurrentCoordinates([]);
       setMappingName("");
-      
+
       toast.success("Mapping berhasil diperbarui!");
     } catch (error) {
       console.error("Gagal memperbarui mapping:", error);
@@ -1469,16 +1470,16 @@ export function FarmerDashboard({
 
     const firstPoint = coordinates[0];
     const lastPoint = coordinates[coordinates.length - 1];
-    
+
     // Check if already closed
-    const isClosed = Math.abs(firstPoint[0] - lastPoint[0]) < 0.0001 && 
-                     Math.abs(firstPoint[1] - lastPoint[1]) < 0.0001;
-    
+    const isClosed = Math.abs(firstPoint[0] - lastPoint[0]) < 0.0001 &&
+      Math.abs(firstPoint[1] - lastPoint[1]) < 0.0001;
+
     if (!isClosed) {
       // Add first point at the end to close the polygon
       return [...coordinates, [firstPoint[0], firstPoint[1]]];
     }
-    
+
     return coordinates;
   };
 
@@ -1491,11 +1492,11 @@ export function FarmerDashboard({
 
     const firstPoint = currentCoordinates[0];
     const lastPoint = currentCoordinates[currentCoordinates.length - 1];
-    
+
     // Check if already closed
-    const isClosed = Math.abs(firstPoint[0] - lastPoint[0]) < 0.0001 && 
-                     Math.abs(firstPoint[1] - lastPoint[1]) < 0.0001;
-    
+    const isClosed = Math.abs(firstPoint[0] - lastPoint[0]) < 0.0001 &&
+      Math.abs(firstPoint[1] - lastPoint[1]) < 0.0001;
+
     if (isClosed) {
       toast.info("Titik sudah tersambung!");
       return;
@@ -1526,18 +1527,18 @@ export function FarmerDashboard({
 
     try {
       setChangingPassword(true);
-      
+
       await api.farmer.changePassword({
         oldPassword,
         newPassword,
         confirmPassword,
       });
-      
+
       // Clear form
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      
+
       toast.success("Password berhasil diubah!");
     } catch (error) {
       console.error("Gagal mengubah password:", error);
@@ -1612,12 +1613,12 @@ export function FarmerDashboard({
   const handleUpdateSensorThresholds = async () => {
     try {
       setUpdatingThresholds(true);
-      
+
       // Debug: log data yang akan dikirim
       console.log("Updating thresholds:", sensorThresholds);
-      
+
       const response = await api.farmer.updateSensorThresholds(sensorThresholds);
-      
+
       // Update state with response from server
       if (response && response.thresholds) {
         setSensorThresholds({
@@ -1635,10 +1636,10 @@ export function FarmerDashboard({
           kalium_max: response.thresholds.kalium_max ?? 70.0,
         });
       }
-      
+
       // Reload realtime data to reflect threshold changes in status colors
       await loadRealtimeData();
-      
+
       toast.success("Threshold sensor berhasil diperbarui!");
     } catch (error) {
       console.error("Gagal memperbarui threshold sensor:", error);
@@ -1688,12 +1689,12 @@ export function FarmerDashboard({
   const handleUpdateDummySensorData = async () => {
     try {
       setUpdatingDummyData(true);
-      
+
       await api.farmer.updateSensorData(dummySensorData);
-      
+
       // Reload realtime data to reflect changes
       await loadRealtimeData();
-      
+
       toast.success("Data sensor berhasil diperbarui!");
     } catch (error) {
       console.error("Gagal memperbarui data sensor:", error);
@@ -1707,12 +1708,12 @@ export function FarmerDashboard({
   const handleUpdateDummyRobotStatus = async () => {
     try {
       setUpdatingDummyData(true);
-      
+
       await api.farmer.updateRobotStatus(dummyRobotStatus);
-      
+
       // Reload robot status to reflect changes
       await loadRobotStatus();
-      
+
       toast.success("Status robot berhasil diperbarui!");
     } catch (error) {
       console.error("Gagal memperbarui status robot:", error);
@@ -1726,9 +1727,8 @@ export function FarmerDashboard({
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 fixed md:static w-64 bg-white border-r h-screen transition-transform z-40`}
+        className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:translate-x-0 fixed md:static w-64 bg-white border-r h-screen transition-transform z-40`}
       >
         <div className="p-6 border-b bg-gradient-to-br from-emerald-50 to-teal-50">
           <div className="flex flex-col gap-2">
@@ -1753,11 +1753,10 @@ export function FarmerDashboard({
                   setActiveMenu(item.id);
                   setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all ${
-                  activeMenu === item.id
-                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg"
-                    : "text-slate-700 hover:bg-emerald-50"
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all ${activeMenu === item.id
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg"
+                  : "text-slate-700 hover:bg-emerald-50"
+                  }`}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm flex-1 text-left">{item.label}</span>
@@ -2061,11 +2060,10 @@ export function FarmerDashboard({
                 <CardContent>
                   <div className="space-y-4">
                     {/* Status Layak/Tidak Layak */}
-                    <div className={`p-4 rounded-lg border-2 ${
-                      mlPrediction.isSuitable 
-                        ? "bg-green-50 border-green-200" 
-                        : "bg-red-50 border-red-200"
-                    }`}>
+                    <div className={`p-4 rounded-lg border-2 ${mlPrediction.isSuitable
+                      ? "bg-green-50 border-green-200"
+                      : "bg-red-50 border-red-200"
+                      }`}>
                       <div className="flex items-center gap-3">
                         {mlPrediction.isSuitable ? (
                           <CheckCircle className="w-6 h-6 text-green-600" />
@@ -2073,9 +2071,8 @@ export function FarmerDashboard({
                           <XCircle className="w-6 h-6 text-red-600" />
                         )}
                         <div>
-                          <h3 className={`text-lg font-semibold ${
-                            mlPrediction.isSuitable ? "text-green-700" : "text-red-700"
-                          }`}>
+                          <h3 className={`text-lg font-semibold ${mlPrediction.isSuitable ? "text-green-700" : "text-red-700"
+                            }`}>
                             {mlPrediction.isSuitable ? "Layak Untuk Jagung" : "Tidak Layak Untuk Jagung"}
                           </h3>
                           <p className="text-sm text-gray-600 mt-1">
@@ -2094,7 +2091,7 @@ export function FarmerDashboard({
                         {mlPrediction.predictions.map((pred, index) => {
                           const isMaize = pred.crop === "maize";
                           const isRecommended = pred.crop === mlPrediction.recommendedCrop;
-                          
+
                           return (
                             <div key={index} className="space-y-2">
                               <div className="flex items-center justify-between">
@@ -2114,15 +2111,14 @@ export function FarmerDashboard({
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2.5">
                                 <div
-                                  className={`h-2.5 rounded-full transition-all ${
-                                    isMaize
-                                      ? mlPrediction.isSuitable
-                                        ? "bg-green-500"
-                                        : "bg-yellow-500"
-                                      : isRecommended
+                                  className={`h-2.5 rounded-full transition-all ${isMaize
+                                    ? mlPrediction.isSuitable
+                                      ? "bg-green-500"
+                                      : "bg-yellow-500"
+                                    : isRecommended
                                       ? "bg-emerald-500"
                                       : "bg-gray-400"
-                                  }`}
+                                    }`}
                                   style={{ width: `${pred.probability}%` }}
                                 />
                               </div>
@@ -2214,8 +2210,8 @@ export function FarmerDashboard({
                               {currentCoordinates.length >= 3 && (() => {
                                 const firstPoint = currentCoordinates[0];
                                 const lastPoint = currentCoordinates[currentCoordinates.length - 1];
-                                const isClosed = Math.abs(firstPoint[0] - lastPoint[0]) < 0.0001 && 
-                                                 Math.abs(firstPoint[1] - lastPoint[1]) < 0.0001;
+                                const isClosed = Math.abs(firstPoint[0] - lastPoint[0]) < 0.0001 &&
+                                  Math.abs(firstPoint[1] - lastPoint[1]) < 0.0001;
                                 if (!isClosed) {
                                   return (
                                     <Button
@@ -2262,7 +2258,7 @@ export function FarmerDashboard({
                             Batal
                           </Button>
                         </div>
-                        
+
                         {currentCoordinates.length === 0 && (
                           <p className="text-xs text-gray-500 text-center">
                             Gambar jalur di peta terlebih dahulu sebelum menyimpan
@@ -2271,47 +2267,47 @@ export function FarmerDashboard({
                       </CardContent>
                     </Card>
                   ) : (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Settings className="w-5 h-5 text-emerald-600" />
-                        Buat Mapping Baru
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Nama Mapping */}
-                      <div className="space-y-2">
-                        <Label htmlFor="mapping-name">
-                          Nama Mapping
-                        </Label>
-                        <Input
-                          id="mapping-name"
-                          type="text"
-                          value={mappingName}
-                          onChange={(e) =>
-                            setMappingName(e.target.value)
-                          }
-                          placeholder="Contoh: Mapping Blok A1"
-                        />
-                      </div>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Settings className="w-5 h-5 text-emerald-600" />
+                          Buat Mapping Baru
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {/* Nama Mapping */}
+                        <div className="space-y-2">
+                          <Label htmlFor="mapping-name">
+                            Nama Mapping
+                          </Label>
+                          <Input
+                            id="mapping-name"
+                            type="text"
+                            value={mappingName}
+                            onChange={(e) =>
+                              setMappingName(e.target.value)
+                            }
+                            placeholder="Contoh: Mapping Blok A1"
+                          />
+                        </div>
 
-                      {/* Info about current drawing */}
-                      {currentCoordinates.length > 0 && (
+                        {/* Info about current drawing */}
+                        {currentCoordinates.length > 0 && (
                           <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 space-y-2">
                             <div>
-                          <p className="text-xs text-emerald-700 font-medium">
-                            Jalur telah digambar
-                          </p>
-                          <p className="text-xs text-gray-600 mt-1">
-                            {currentCoordinates.length} titik telah ditambahkan
-                          </p>
+                              <p className="text-xs text-emerald-700 font-medium">
+                                Jalur telah digambar
+                              </p>
+                              <p className="text-xs text-gray-600 mt-1">
+                                {currentCoordinates.length} titik telah ditambahkan
+                              </p>
                             </div>
                             <div className="flex gap-2">
                               {currentCoordinates.length >= 3 && (() => {
                                 const firstPoint = currentCoordinates[0];
                                 const lastPoint = currentCoordinates[currentCoordinates.length - 1];
-                                const isClosed = Math.abs(firstPoint[0] - lastPoint[0]) < 0.0001 && 
-                                                 Math.abs(firstPoint[1] - lastPoint[1]) < 0.0001;
+                                const isClosed = Math.abs(firstPoint[0] - lastPoint[0]) < 0.0001 &&
+                                  Math.abs(firstPoint[1] - lastPoint[1]) < 0.0001;
                                 if (!isClosed) {
                                   return (
                                     <Button
@@ -2327,36 +2323,36 @@ export function FarmerDashboard({
                                 }
                                 return null;
                               })()}
-                          <Button
-                            size="sm"
-                            variant="ghost"
+                              <Button
+                                size="sm"
+                                variant="ghost"
                                 className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={handleClearDrawing}
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Hapus Jalur
-                          </Button>
+                                onClick={handleClearDrawing}
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                Hapus Jalur
+                              </Button>
                             </div>
-                        </div>
-                      )}
+                          </div>
+                        )}
 
-                      {/* Button Save */}
-                      <Button
-                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-                        onClick={handleSaveMapping}
-                        disabled={!mappingName.trim() || currentCoordinates.length === 0}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Simpan Mapping
-                      </Button>
-                      
-                      {currentCoordinates.length === 0 && (
-                        <p className="text-xs text-gray-500 text-center">
-                          Gambar jalur di peta terlebih dahulu sebelum menyimpan
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
+                        {/* Button Save */}
+                        <Button
+                          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                          onClick={handleSaveMapping}
+                          disabled={!mappingName.trim() || currentCoordinates.length === 0}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Simpan Mapping
+                        </Button>
+
+                        {currentCoordinates.length === 0 && (
+                          <p className="text-xs text-gray-500 text-center">
+                            Gambar jalur di peta terlebih dahulu sebelum menyimpan
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
                   )}
 
                   {/* List Saved Mappings */}
@@ -2382,11 +2378,10 @@ export function FarmerDashboard({
                           {savedMappings.map((mapping) => (
                             <div
                               key={mapping.id}
-                              className={`p-3 border rounded-lg transition-colors cursor-pointer ${
-                                selectedMappingId === mapping.id
-                                  ? "bg-emerald-100 border-emerald-300"
-                                  : "hover:bg-emerald-50"
-                              }`}
+                              className={`p-3 border rounded-lg transition-colors cursor-pointer ${selectedMappingId === mapping.id
+                                ? "bg-emerald-100 border-emerald-300"
+                                : "hover:bg-emerald-50"
+                                }`}
                               onClick={() => handleMappingClick(mapping.id)}
                             >
                               <div className="flex justify-between items-start">
@@ -2416,18 +2411,18 @@ export function FarmerDashboard({
                                   >
                                     <Pencil className="w-3 h-3" />
                                   </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteMapping(mapping.id);
-                                  }}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteMapping(mapping.id);
+                                    }}
                                     title="Hapus Mapping"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
                                 </div>
                               </div>
                             </div>
@@ -2443,7 +2438,7 @@ export function FarmerDashboard({
                       <AlertDialogHeader>
                         <AlertDialogTitle>Hapus Mapping</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Apakah Anda yakin ingin menghapus mapping <strong>"{mappingToDelete?.name}"</strong>? 
+                          Apakah Anda yakin ingin menghapus mapping <strong>"{mappingToDelete?.name}"</strong>?
                           Tindakan ini tidak dapat dibatalkan.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -2481,13 +2476,13 @@ export function FarmerDashboard({
                   </CardHeader>
                   <CardContent>
                     {chartData.length === 0 ? (
-                    <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
-                      <div className="text-center text-gray-500">
-                        <TrendingUp className="w-12 h-12 mx-auto mb-2 text-emerald-400" />
+                      <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
+                        <div className="text-center text-gray-500">
+                          <TrendingUp className="w-12 h-12 mx-auto mb-2 text-emerald-400" />
                           <p className="text-sm">Belum ada data</p>
                           <p className="text-xs mt-1">(Data 7 hari terakhir)</p>
+                        </div>
                       </div>
-                    </div>
                     ) : (
                       <ChartContainer
                         config={{
@@ -2541,13 +2536,13 @@ export function FarmerDashboard({
                   </CardHeader>
                   <CardContent>
                     {chartData.length === 0 ? (
-                    <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
-                      <div className="text-center text-gray-500">
-                        <TrendingUp className="w-12 h-12 mx-auto mb-2 text-emerald-400" />
+                      <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
+                        <div className="text-center text-gray-500">
+                          <TrendingUp className="w-12 h-12 mx-auto mb-2 text-emerald-400" />
                           <p className="text-sm">Belum ada data</p>
                           <p className="text-xs mt-1">(Data 7 hari terakhir)</p>
+                        </div>
                       </div>
-                    </div>
                     ) : (
                       <ChartContainer
                         config={{
@@ -2589,13 +2584,13 @@ export function FarmerDashboard({
                   </CardHeader>
                   <CardContent>
                     {chartData.length === 0 ? (
-                    <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
-                      <div className="text-center text-gray-500">
-                        <TrendingUp className="w-12 h-12 mx-auto mb-2 text-emerald-400" />
+                      <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
+                        <div className="text-center text-gray-500">
+                          <TrendingUp className="w-12 h-12 mx-auto mb-2 text-emerald-400" />
                           <p className="text-sm">Belum ada data</p>
                           <p className="text-xs mt-1">(Data 7 hari terakhir)</p>
+                        </div>
                       </div>
-                    </div>
                     ) : (
                       <ChartContainer
                         config={{
@@ -2649,13 +2644,13 @@ export function FarmerDashboard({
                   </CardHeader>
                   <CardContent>
                     {chartData.length === 0 ? (
-                    <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
-                      <div className="text-center text-gray-500">
-                        <TrendingUp className="w-12 h-12 mx-auto mb-2 text-emerald-400" />
+                      <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
+                        <div className="text-center text-gray-500">
+                          <TrendingUp className="w-12 h-12 mx-auto mb-2 text-emerald-400" />
                           <p className="text-sm">Belum ada data</p>
                           <p className="text-xs mt-1">(Data 7 hari terakhir)</p>
+                        </div>
                       </div>
-                    </div>
                     ) : (
                       <ChartContainer
                         config={{
@@ -2756,49 +2751,48 @@ export function FarmerDashboard({
                           </TableRow>
                         ) : (
                           robotHistory.map((record) => (
-                          <TableRow key={record.id}>
-                            <TableCell className="text-center">
-                              <div className="flex items-center gap-2 whitespace-nowrap justify-center">
-                                <Calendar className="w-4 h-4 text-gray-400" />
-                                {record.timestampFormatted || formatTimestamp(record.timestamp)}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {record.suhu}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {record.kelembapan}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {record.ph}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {record.nitrogen}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {record.phospor}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {record.kalium}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {record.benihTertanam} biji
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {record.baterai}%
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span
-                                className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
-                                  record.status === "Layak"
+                            <TableRow key={record.id}>
+                              <TableCell className="text-center">
+                                <div className="flex items-center gap-2 whitespace-nowrap justify-center">
+                                  <Calendar className="w-4 h-4 text-gray-400" />
+                                  {record.timestampFormatted || formatTimestamp(record.timestamp)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {record.suhu}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {record.kelembapan}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {record.ph}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {record.nitrogen}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {record.phospor}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {record.kalium}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {record.benihTertanam} biji
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {record.baterai}%
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span
+                                  className={`px-2 py-1 rounded text-xs whitespace-nowrap ${record.status === "Layak"
                                     ? "bg-green-100 text-green-700"
                                     : "bg-red-100 text-red-700"
-                                }`}
-                              >
-                                {record.status}
-                              </span>
-                            </TableCell>
-                          </TableRow>
+                                    }`}
+                                >
+                                  {record.status}
+                                </span>
+                              </TableCell>
+                            </TableRow>
                           ))
                         )}
                       </TableBody>
@@ -2869,7 +2863,7 @@ export function FarmerDashboard({
                         <Settings className="w-4 h-4 mr-2" />
                         Simpan Parameter
                       </Button>
-                      <Button 
+                      <Button
                         variant="outline"
                         onClick={handleResetToDefault}
                       >
@@ -2915,20 +2909,19 @@ export function FarmerDashboard({
                             Status Robot:
                           </p>
                           <div className="flex items-center gap-2">
-                            <p className={`font-semibold ${
-                              robotStatus.operationStatus === "Standby" || robotStatus.operationStatus === "Berhenti"
-                                ? "text-gray-700"
-                                : robotStatus.operationStatus === "Penaburan Aktif"
+                            <p className={`font-semibold ${robotStatus.operationStatus === "Standby" || robotStatus.operationStatus === "Berhenti"
+                              ? "text-gray-700"
+                              : robotStatus.operationStatus === "Penaburan Aktif"
                                 ? "text-green-700"
                                 : "text-emerald-700"
-                            }`}>
+                              }`}>
                               {robotStatus.operationStatus || "Standby"}
                             </p>
-                            {robotStatus.operationStatus && 
-                             robotStatus.operationStatus !== "Standby" && 
-                             robotStatus.operationStatus !== "Berhenti" && (
-                              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            )}
+                            {robotStatus.operationStatus &&
+                              robotStatus.operationStatus !== "Standby" &&
+                              robotStatus.operationStatus !== "Berhenti" && (
+                                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                              )}
                           </div>
                         </div>
                         <div>
@@ -3058,7 +3051,7 @@ export function FarmerDashboard({
                       {/* Operation Controls */}
                       <div className="space-y-3">
                         <h3>Kontrol Operasi</h3>
-                        
+
                         {/* Tancap Sensor Button - Only for Manual mode */}
                         {robotMode === "manual" && (
                           <div className="w-full">
@@ -3068,7 +3061,7 @@ export function FarmerDashboard({
                               }
                               disabled={isTancapSensor}
                               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed border-2 border-indigo-800 py-3"
-                              style={{ 
+                              style={{
                                 color: '#ffffff',
                                 backgroundColor: isTancapSensor ? '#9ca3af' : '#4f46e5'
                               }}
@@ -3093,7 +3086,7 @@ export function FarmerDashboard({
                               onChange={async (e) => {
                                 const mappingId = e.target.value;
                                 setSelectedMapping(mappingId);
-                                
+
                                 // Save selected mapping to backend
                                 try {
                                   await api.farmer.updateRobotStatus({
